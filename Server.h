@@ -21,32 +21,39 @@ const int MAX_SIZE = 1024;
 
 class Server {
 private:
-    // Флаг
+    // Флаг состояния
     std::atomic<bool> isActive = ATOMIC_VAR_INIT(true);
 
+    // Объект потока для обработчика UPD запросов
     std::thread udp_handler_thread;
 
+    // Мьютекс для работы с консолью
     std::mutex  console_mutex;
 
+    // Адреса
     sockaddr_in server_address = sockaddr_in(),
                 client_address = sockaddr_in();
 
+    // Сокеты
     int listener_tcp = 0,
         listener_udp = 0;
 
+    // Вспомогательные атрибуты
     int address_length = 0,
         port = 0,
         connection_amount = 3;
 
-    char* ip = nullptr;
+    char* address_type = nullptr;
 
+    // Методы запуска обработчиков
     void start_tcp_handler();
     void start_udp_handler();
 
+    // Метод обработки строки
     static std::string find_numbers_in_string(char *data);
 
 public:
-    explicit Server(int port, char* ip, int connection_amount = 0);
+    explicit Server(int port, char* address_type);
     ~Server();
 
     void start();

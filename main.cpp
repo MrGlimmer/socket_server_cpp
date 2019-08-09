@@ -1,32 +1,20 @@
 #include <iostream>
-#include <cstring>
 #include "Server.h"
 
 int main(int argc, char *argv[]) {
-    int     port = 3425,
-            connection_amount = 3;
-    char*   ip = nullptr;
-    // INADDR_LOOPBACK - для теста в рамках одной машины
-    // INADDR_ANY - любые сетевые адреса
+    // Инициализируем переменные
+    int port = 3425;
+    std::string address_type = "127.0.0.1";
 
-    if (argc != 0)
-    {
-        port = static_cast<int>(strtol(argv[1], nullptr, 0));
+    // Берем порт из параметра
+    if (argc > 0) port = static_cast<int>(strtol(argv[1], nullptr, 0));
+    // debug - локальный
+    if (argc > 2) address_type = argv[2];
 
-        if (argc > 2)
-        {
-            connection_amount = static_cast<int>(strtol(argv[2], nullptr, 0));
-        }
-
-        // Debug - looppack
-        if (argc > 3)
-        {
-            ip = argv[3];
-        }
-    }
 
     try {
-        auto server = new Server(port, ip, connection_amount);
+        // Создаем и запускаем сервер
+        auto server = new Server(port, &address_type.c_str());
         std::cout << "Server has been launched at port " << server->getPort() << std::endl;
         server->start();
 

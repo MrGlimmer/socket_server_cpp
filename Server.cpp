@@ -1,13 +1,16 @@
 #include "Server.h"
 
-Server::Server(int port_, char* ip_, int connection_amount_)
-    : port(port_), ip(ip_), connection_amount(connection_amount_)
+Server::Server(int port_, char* address_type_)
+    : port(port_), address_type(address_type_)
 {
+    // Очищаем объект адреса
     bzero( &server_address, sizeof( sockaddr_in  ) );
     /* Инициализируем адрес, к которому привяжем сокет */
     server_address.sin_family = AF_INET,
     server_address.sin_port = htons(port),
-    server_address.sin_addr.s_addr = strcmp(ip, "debug") == 0 ? htonl(INADDR_LOOPBACK) : inet_addr(ip);
+    server_address.sin_addr.s_addr = strcmp(address_type, "debug") == 0
+                                        ? htonl(INADDR_LOOPBACK)
+                                        : inet_addr("127.0.0.1");
 
     /* Инициализируем размер адреса */
     address_length = sizeof(server_address);
@@ -30,6 +33,7 @@ void Server::stop()
 {
     isActive = false;
 
+    // Выключаем поток
     udp_handler_thread.join();
 
     close(listener_tcp);
@@ -68,7 +72,7 @@ void Server::start_tcp_handler() {
 
     while (isActive)
     {
-        // Получаем соединение, если не в порядке -> exception
+        // Ожидаем соединение, если не в порядке -> exception
         int socket = accept(listener_tcp, (struct sockaddr *) &server_address, (socklen_t*) &address_length);
         if (socket < 0)
         {
@@ -76,11 +80,14 @@ void Server::start_tcp_handler() {
             throw AcceptingException();
         }
 
+        // Работаем с клиентом -> ждем и обрабатываем запросы
         while (true)
         {
+            // Инициализируем и чистим буфер
             char buffer[MAX_SIZE];
             bzero(buffer, sizeof(buffer));
 
+            // Ожидаем запросы
             int bytes = recv(socket, buffer, MAX_SIZE, 0);
             if (bytes <= 0) break;
 
@@ -89,16 +96,18 @@ void Server::start_tcp_handler() {
             std::cout << "Server received: " << buffer << std::endl;
             console_mutex.unlock();
 
+            // Генерация ответа
             auto answer = strcpy(buffer, find_numbers_in_string(buffer).c_str());
             auto message_size = strlen(answer);
             message_size = message_size < MAX_SIZE ? message_size : MAX_SIZE;
+
+            // Отправляем ответ обратно клиенту
+            send(socket, answer, message_size, 0);
 
             console_mutex.lock();
             std::cout << "Server sent back: " << answer << std::endl;
             std::cout << "************************************" << std::endl;
             console_mutex.unlock();
-
-            send(socket, answer, message_size, 0);
         }
 
         /* Закрываем соединение */
@@ -126,11 +135,13 @@ void Server::start_udp_handler() {
 
     while (isActive)
     {
-        // Получаем данные и отправляем их обратно
+        // Инициализируем и очищаем буфер
         char buffer[MAX_SIZE];
         bzero(buffer, sizeof(buffer));
+        // Очищаем объект адреса клиента
         bzero( &client_address, sizeof( sockaddr_in  ) );
 
+        // Ожидаем запросы
         socklen_t client_address_size = sizeof client_address;
         int bytes = recvfrom(listener_udp, buffer, MAX_SIZE, 0,
                 (struct sockaddr *) &client_address, &client_address_size);
@@ -142,11 +153,12 @@ void Server::start_udp_handler() {
         std::cout << "Server received: " << buffer << std::endl;
         console_mutex.unlock();
 
+        // Генерация ответа
         auto answer = strcpy(buffer, find_numbers_in_string(buffer).c_str());
         auto message_size = strlen(answer);
         message_size = message_size < MAX_SIZE ? message_size : MAX_SIZE;
 
-
+        // Отправляем ответ клиенту
         sendto(listener_udp, answer, message_size, 0,
                 (struct sockaddr *) &client_address, sizeof(client_address));
 

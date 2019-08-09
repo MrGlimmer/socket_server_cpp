@@ -1,12 +1,12 @@
 # TCP / UDP server
 
-Instruction:
+Инструкция:
 
-Launch parameters:
+Параметры запуска:
 
-1. Port (by default - 3425).
-2. Address type, nothing is ANY, *debug* is localhost.
+1. Порт (по умолчанию - 3425).
+2. Тип доступа, пусто - общий, *debug* - локальный.
 
-Standard launch - _./socket-server-cpp 3425_
+Базовый запуск - _./socket-server-cpp 3425_
 
-Debugging - _./socket-server-cpp 3425 debug_
+Отладка - _./socket-server-cpp 3425 debug_

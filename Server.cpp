@@ -128,6 +128,8 @@ void Server::start_tcp_handler() {
                     continue;
                 }
 
+                buffer[bytes] = '\0';
+
                 console_mutex.lock();
                 std::cout << "************************************" << std::endl;
                 std::cout << "Server received: " << buffer << std::endl;
@@ -142,7 +144,7 @@ void Server::start_tcp_handler() {
                 send(client, answer, message_size, 0);
 
                 console_mutex.lock();
-                std::cout << "Server sent back: " << answer << std::endl;
+                std::cout << "TCP Server sent back: " << answer << std::endl;
                 std::cout << "************************************" << std::endl;
                 console_mutex.unlock();
             }
@@ -198,7 +200,7 @@ void Server::start_udp_handler() {
                 (struct sockaddr *) &client_address, sizeof(client_address));
 
         console_mutex.lock();
-        std::cout << "Server sent back: " << answer << std::endl;
+        std::cout << "UDP Server sent back: " << answer << std::endl;
         std::cout << "************************************" << std::endl;
         console_mutex.unlock();
     }
@@ -221,6 +223,7 @@ std::string Server::find_numbers_in_string(char *data)
             if ( isdigit( temp[i] ) )
             {
                 numbers->push_back( strtol(temp + i, &temp, 10) );
+                i = 0;
                 break;
             }
             i++;

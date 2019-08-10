@@ -19,6 +19,11 @@
 
 const int MAX_SIZE = 1024;
 
+enum ServerType : int {
+    standard = 0,
+    debug
+};
+
 class Server {
 private:
     // Флаг состояния
@@ -43,7 +48,8 @@ private:
         port = 0,
         connection_amount = 3;
 
-    char* address_type = nullptr;
+    // Тип сервера
+    ServerType type;
 
     // Методы запуска обработчиков
     void start_tcp_handler();
@@ -53,7 +59,7 @@ private:
     static std::string find_numbers_in_string(char *data);
 
 public:
-    explicit Server(int port, char* address_type);
+    explicit Server(int port, ServerType type);
     ~Server();
 
     void start();

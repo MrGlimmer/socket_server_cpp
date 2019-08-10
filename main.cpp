@@ -4,17 +4,21 @@
 int main(int argc, char *argv[]) {
     // Инициализируем переменные
     int port = 3425;
-    std::string address_type = "127.0.0.1";
+    char* server_type = nullptr;
 
     // Берем порт из параметра
     if (argc > 0) port = static_cast<int>(strtol(argv[1], nullptr, 0));
     // debug - локальный
-    if (argc > 2) address_type = argv[2];
-
+    if (argc > 2)
+        server_type = argv[2];
 
     try {
-        // Создаем и запускаем сервер
-        auto server = new Server(port, &address_type.c_str());
+        // Создаем и запускаем сервер, если тип сервера не указан, как debug -> стандартный
+        auto server = new Server(port,
+                                 (server_type != nullptr) && (strcmp(server_type, "debug") == 0)
+                                 ? ServerType::debug
+                                 : ServerType::standard);
+
         std::cout << "Server has been launched at port " << server->getPort() << std::endl;
         server->start();
 

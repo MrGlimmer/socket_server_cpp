@@ -1,16 +1,16 @@
 #include "Server.h"
 
-Server::Server(int port_, char* address_type_)
-    : port(port_), address_type(address_type_)
+Server::Server(int port_, ServerType type_)
+    : port(port_), type(type_)
 {
     // Очищаем объект адреса
     bzero( &server_address, sizeof( sockaddr_in  ) );
     /* Инициализируем адрес, к которому привяжем сокет */
     server_address.sin_family = AF_INET,
     server_address.sin_port = htons(port),
-    server_address.sin_addr.s_addr = strcmp(address_type, "debug") == 0
-                                        ? htonl(INADDR_LOOPBACK)
-                                        : inet_addr("127.0.0.1");
+    server_address.sin_addr.s_addr = (type == ServerType::standard)
+                                    ? inet_addr("127.0.0.1")
+                                    : htonl(INADDR_LOOPBACK);
 
     /* Инициализируем размер адреса */
     address_length = sizeof(server_address);

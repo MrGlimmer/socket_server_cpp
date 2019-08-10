@@ -53,7 +53,7 @@ void Server::start_tcp_handler() {
     if (listener_tcp <= 0)
     {
         this->stop();
-        throw SocketCreationException();
+        throw std::runtime_error("Problem with socket creation.");
     }
 
     fcntl(listener_tcp, F_SETFL, O_NONBLOCK);
@@ -62,14 +62,14 @@ void Server::start_tcp_handler() {
     if (bind(listener_tcp, (struct sockaddr *) &server_address, sizeof(server_address) ) < 0 )
     {
         this->stop();
-        throw BindingException();
+        throw std::runtime_error("Problem with binding address at server.");
     }
 
     /* Начинаем прослушку порта, если не в порядке -> exception */
     if (listen(listener_tcp, connection_amount) < 0 )
     {
         this->stop();
-        throw ListeningException();
+        throw std::runtime_error("Problem with listening at TCP server.");
     }
 
     /* Инициализируем список клиентов */
@@ -90,7 +90,7 @@ void Server::start_tcp_handler() {
         if(select(max_value + 1, &read_set, nullptr, nullptr, nullptr ) <= 0 )
         {
             this->stop();
-            throw SelectingException();
+            throw std::runtime_error("Problem in socket selection.");
         }
 
         // Определяем тип события и выполняем соответствующие действия
@@ -101,7 +101,7 @@ void Server::start_tcp_handler() {
             if(socket < 0)
             {
                 this->stop();
-                throw AcceptingException();
+                throw std::runtime_error("Problem accepting at TCP server.");
             }
 
             fcntl(socket, F_SETFL, O_NONBLOCK);
@@ -158,14 +158,14 @@ void Server::start_udp_handler() {
     if (listener_udp == 0)
     {
         this->stop();
-        throw SocketCreationException();
+        throw std::runtime_error("Problem with socket creation.");
     }
 
     /* Связывание сокета с адресом, если не в порядке -> exception */
     if (bind(listener_udp, (struct sockaddr *) &server_address, sizeof(server_address) ) < 0 )
     {
         this->stop();
-        throw BindingException();
+        throw std::runtime_error("Problem with binding address at server.");
     }
 
     while (isActive)

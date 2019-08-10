@@ -22,14 +22,8 @@ int main(int argc, char *argv[]) {
         std::cout << "Server has been launched at port " << server->getPort() << std::endl;
         server->start();
 
-    } catch (SocketCreationException &e) {
-        std::cout << "SocketCreationException: " << e.what() << std::endl;
-    } catch (BindingException &e) {
-        std::cout << "BindingException: " << e.what() << std::endl;
-    } catch (ListeningException &e) {
-        std::cout << "ListeningException: " << e.what() << std::endl;
-    } catch (AcceptingException &e) {
-        std::cout << "AcceptingException: " << e.what() << std::endl;
+    } catch (std::runtime_error &e) {
+        std::cout << "Run time error: " << e.what() << std::endl;
     } catch (std::exception &e) {
         std::cout << "Exception: " << e.what() << std::endl;
     }

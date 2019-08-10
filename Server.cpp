@@ -50,11 +50,13 @@ void Server::start_tcp_handler() {
     listener_tcp = socket(AF_INET, SOCK_STREAM, 0);
 
     /* Если не в порядке -> exception */
-    if (listener_tcp == 0)
+    if (listener_tcp <= 0)
     {
         this->stop();
         throw SocketCreationException();
     }
+
+    fcntl(listener_tcp, F_SETFL, O_NONBLOCK);
 
     /* Связывание сокета с адресом, если не в порядке -> exception */
     if (bind(listener_tcp, (struct sockaddr *) &server_address, sizeof(server_address) ) < 0 )
@@ -70,48 +72,81 @@ void Server::start_tcp_handler() {
         throw ListeningException();
     }
 
+    /* Инициализируем список клиентов */
+    auto clients = new std::set<int>();
+    clients->clear();
+
     while (isActive)
     {
-        // Ожидаем соединение, если не в порядке -> exception
-        int socket = accept(listener_tcp, (struct sockaddr *) &server_address, (socklen_t*) &address_length);
-        if (socket < 0)
+        // Заполняем множество сокетов
+        fd_set read_set{};
+        FD_ZERO(&read_set);
+        FD_SET(listener_tcp, &read_set);
+
+        for(auto& it : *clients) FD_SET(it, &read_set);
+
+        // Ждём события в одном из сокетов
+        int max_value = std::max(listener_tcp, *max_element(clients->begin(), clients->end()));
+        if(select(max_value + 1, &read_set, nullptr, nullptr, nullptr ) <= 0 )
         {
             this->stop();
-            throw AcceptingException();
+            throw SelectingException();
         }
 
-        // Работаем с клиентом -> ждем и обрабатываем запросы
-        while (true)
+        // Определяем тип события и выполняем соответствующие действия
+        if(FD_ISSET(listener_tcp, &read_set))
         {
-            // Инициализируем и чистим буфер
-            char buffer[MAX_SIZE];
-            bzero(buffer, sizeof(buffer));
+            // Поступил новый запрос на соединение, используем accept
+            int socket = accept(listener_tcp, (struct sockaddr *) &server_address, (socklen_t*) &address_length);
+            if(socket < 0)
+            {
+                this->stop();
+                throw AcceptingException();
+            }
 
-            // Ожидаем запросы
-            int bytes = recv(socket, buffer, MAX_SIZE, 0);
-            if (bytes <= 0) break;
+            fcntl(socket, F_SETFL, O_NONBLOCK);
 
-            console_mutex.lock();
-            std::cout << "************************************" << std::endl;
-            std::cout << "Server received: " << buffer << std::endl;
-            console_mutex.unlock();
-
-            // Генерация ответа
-            auto answer = strcpy(buffer, find_numbers_in_string(buffer).c_str());
-            auto message_size = strlen(answer);
-            message_size = message_size < MAX_SIZE ? message_size : MAX_SIZE;
-
-            // Отправляем ответ обратно клиенту
-            send(socket, answer, message_size, 0);
-
-            console_mutex.lock();
-            std::cout << "Server sent back: " << answer << std::endl;
-            std::cout << "************************************" << std::endl;
-            console_mutex.unlock();
+            clients->insert(socket);
         }
 
-        /* Закрываем соединение */
-        close(socket);
+        for(auto& client : *clients)
+        {
+            if(FD_ISSET(client, &read_set))
+            {
+                // Инициализируем и чистим буфер
+                char buffer[MAX_SIZE];
+                bzero(buffer, sizeof(buffer));
+
+                // Поступили данные от клиента, читаем их
+                int bytes = recv(client, buffer, MAX_SIZE, 0);
+
+                if(bytes <= 0)
+                {
+                    // Соединение разорвано, удаляем сокет из множества
+                    close(client);
+                    clients->erase(client);
+                    continue;
+                }
+
+                console_mutex.lock();
+                std::cout << "************************************" << std::endl;
+                std::cout << "Server received: " << buffer << std::endl;
+                console_mutex.unlock();
+
+                // Генерация ответа
+                auto answer = strcpy(buffer, find_numbers_in_string(buffer).c_str());
+                auto message_size = strlen(answer);
+                message_size = message_size < MAX_SIZE ? message_size : MAX_SIZE;
+
+                // Отправляем ответ обратно клиенту
+                send(client, answer, message_size, 0);
+
+                console_mutex.lock();
+                std::cout << "Server sent back: " << answer << std::endl;
+                std::cout << "************************************" << std::endl;
+                console_mutex.unlock();
+            }
+        }
     }
 }
 

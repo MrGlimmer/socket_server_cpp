@@ -5,17 +5,19 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <iostream>
 #include <exception>
+#include <mutex>
+#include <thread>
+#include <atomic>
 #include <vector>
+#include <set>
 #include <string>
 #include <cstring>
 #include <algorithm>
-#include <atomic>
-#include <arpa/inet.h>
-#include <iostream>
-#include <mutex>
-#include <thread>
-#include <future>
+#include <ctime>
 
 const int MAX_SIZE = 1024;
 
@@ -112,5 +114,15 @@ public:
     }
 };
 
+class SelectingException : public std::exception
+{
+public:
+    SelectingException() = default;
+    ~SelectingException() override = default;
+
+    const char* what() const noexcept override {
+        return "Problem in socket selection.";
+    }
+};
 
 #endif //SOCKET_SERVER_CPP_SERVER_H

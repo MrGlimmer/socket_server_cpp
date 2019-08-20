@@ -14,13 +14,13 @@ int main(int argc, char *argv[]) {
 
     try {
         // Создаем и запускаем сервер, если тип сервера не указан, как debug -> стандартный
-        auto server = new Server(port,
-                                 (server_type != nullptr) && (strcmp(server_type, "debug") == 0)
-                                 ? ServerType::debug
-                                 : ServerType::standard);
+        Server server(port,
+                     (server_type != nullptr) && (strcmp(server_type, "debug") == 0)
+                     ? ServerType::debug
+                     : ServerType::standard);
 
-        std::cout << "Server has been launched at port " << server->getPort() << std::endl;
-        server->start();
+        std::cout << "Server has been launched at port " << server.getPort() << std::endl;
+        server.start();
 
     } catch (std::runtime_error &e) {
         std::cout << "Run time error: " << e.what() << std::endl;
